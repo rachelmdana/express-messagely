@@ -37,30 +37,33 @@ describe("Test Message class", function () {
   });
 
   test("can create", async function () {
-    let m = await Message.create({
-      from_username: "test1",
-      to_username: "test2",
-      body: "new"
-    });
-
-    expect(m).toEqual({
-      id: expect.any(Number),
-      from_username: "test1",
-      to_username: "test2",
-      body: "new",
-      sent_at: expect.any(Date),
-    });
+  let m = await Message.create({
+    from_username: "test1",
+    to_username: "test2",
+    body: "new"
   });
 
+  expect(m).toEqual({
+    id: expect.any(Number),
+    from_username: "test1",
+    to_username: "test2",
+    body: "new",
+    sent_at: expect.any(Date),
+  });
+});
+
   test("can mark read", async function () {
-    let m = await Message.create({
+    let m = await Promise.all([
+      Message.create({
       from_username: "test1",
       to_username: "test2",
       body: "new"
-    });
+      })]);
+  
+
     expect(m.read_at).toBe(undefined);
 
-    Message.markRead(m.id);
+    await Message.markRead(m.id);
     const result = await db.query("SELECT read_at from messages where id=$1",
         [m.id]);
     expect(result.rows[0].read_at).toEqual(expect.any(Date));

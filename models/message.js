@@ -42,7 +42,6 @@ class Message {
 
     return result.rows[0];
   }
-
   /** Get: get message by id
    *
    * returns {id, from_user, to_user, body, sent_at, read_at}
