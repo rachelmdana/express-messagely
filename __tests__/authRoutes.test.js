@@ -9,16 +9,24 @@ const User = require("../models/user");
 describe("Auth Routes Test", function () {
 
   beforeEach(async function () {
-    await db.query("DELETE FROM messages");
-    await db.query("DELETE FROM users");
+    if (!this.dataInserted) {
+      try {
+        await db.query("DELETE FROM messages");
+        await db.query("DELETE FROM users");
 
-    let u1 = await User.register({
-      username: "test1",
-      password: "password",
-      first_name: "Test1",
-      last_name: "Testy1",
-      phone: "+14155550000",
-    });
+        await User.register({
+          username: "test1",
+          password: "password",
+          first_name: "Test1",
+          last_name: "Testy1",
+          phone: "+14155550000",
+        });
+
+        this.dataInserted = true;
+      } catch (error) {
+        console.log("Error in beforeEach:", error);
+      }
+    }
   });
 
   /** POST /auth/register => token  */
@@ -53,8 +61,9 @@ describe("Auth Routes Test", function () {
       
 
       let token = response.body.token;
+      console.log('Token:', token);
       expect(jwt.decode(token)).toEqual({
-        username: "test1",
+      username: "test1",
         iat: expect.any(Number)
       });
     });

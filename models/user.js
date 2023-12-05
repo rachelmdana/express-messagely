@@ -27,17 +27,29 @@ class User {
   /** Authenticate: is this username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
-    const result = await db.query(
-      'SELECT password FROM users WHERE username = $1',
-      [username]
-    );
-    const user = result.rows[0];
-    return user && await bcrypt.compare(password, user.password);
+    // console.log('Authenticating user:', username);
+    try {
+      const user = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+
+      if (user.rows.length === 1) {
+        const isValidPassword = await bcrypt.compare(password, user.rows[0].password);
+
+        if (isValidPassword) {
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error during authentication:', error);
+      
+      throw error;
+    }
   }
 
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
+    // console.log('Updating login timestamp for user:', username);
     const result = await db.query(
       'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE username = $1 RETURNING username',
       [username]
@@ -87,25 +99,28 @@ class User {
    */
 
   static async messagesFrom(username) {
-    const result = await db.query(
-      `SELECT m.id, m.to_username, m.body, m.sent_at, m.read_at, u.first_name, u.last_name, u.phone
-      FROM messages AS m
-      JOIN users AS u ON m.to_username = u.username
-      WHERE from_username = $1`,
-      [username]
-    );
+    const sqlQuery = `SELECT m.id, m.to_username, m.body, m.sent_at, m.read_at, u.first_name, u.last_name, u.phone
+    FROM messages AS m
+    JOIN users AS u ON m.to_username = u.username
+    WHERE from_username = $1`;
+
+    // console.log('SQL Query:', sqlQuery);
+
+    const result = await db.query(sqlQuery, [username]);
+
+  //  console.log('Result:', result.rows);
 
     return result.rows.map(row => ({
-      id: row.id,
-      to_user: {
-        username: row.to_username,
-        first_name: row.to_first_name,
-        last_name: row.to_last_name,
-        phone: row.to_phone
-      },
-      body: row.body,
-      sentAt: row.sent_at,
-      readAt: row.read_at,
+    id: row.id,
+    to_user: {
+      username: row.to_username,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      phone: row.phone,
+    },
+    body: row.body,
+    sentAt: row.sent_at,
+    readAt: row.read_at,
     }));
   }
  
@@ -120,20 +135,20 @@ class User {
 
   static async messagesTo(username) {
     const result = await db.query(
-      `SELECT m.id, m.to_username, m.body, m.sent_at, m.read_at, u.first_name, u.last_name, u.phone
+      `SELECT m.id, m.from_username, m.body, m.sent_at, m.read_at, u.first_name, u. last_name, u.phone
       FROM messages AS m
-      JOIN users AS u ON m.to_username = u.username
-      WHERE from_username = $1`,
+      JOIN users AS u ON m.from_username = u.username
+      WHERE to_username = $1`,
       [username]
     );
 
     return result.rows.map(row => ({
       id: row.id,
-      to_user: {
-        username: row.to_username,
-        first_name: row.to_first_name,
-        last_name: row.to_last_name,
-        phone: row.to_phone
+      from_user: {
+        username: row.from_username,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        phone: row.phone
       },
       body: row.body,
       sentAt: row.sent_at,

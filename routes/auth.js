@@ -3,7 +3,7 @@ const Router = require("express").Router;
 const router = new Router();
 
 const User = require("../models/user");
-const {SECRET_KEY} = require("../config");
+const { SECRET_KEY } = require("../config");
 const ExpressError = require("../expressError");
 
 /** POST /login - login: {username, password} => {token}
@@ -34,7 +34,8 @@ router.post('/login', async function (req, res, next) {
  */
 router.post('/register', async function (req, res, next) {
     try {
-        const { username } = req.body;
+        const { username, password, first_name, last_name, phone } = req.body;
+        const user = await User.register({ username, password, first_name, last_name, phone });
         let token = jwt.sign({ username }, SECRET_KEY);
         User.updateLoginTimestamp(username);
         return res.status(201).json({ token });
@@ -44,4 +45,3 @@ router.post('/register', async function (req, res, next) {
 });
 
 module.exports = router;
-

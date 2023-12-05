@@ -6,13 +6,30 @@ const Message = require("../models/message");
 describe("Test User class", function () {
   beforeEach(async function () {
     await db.query("DELETE FROM messages");
-    await db.query("DELETE FROM users");
-    let u = await User.register({
+    await db.query("DELETE FROM users CASCADE");
+    
+    await User.register({
       username: "test",
       password: "password",
       first_name: "Test",
       last_name: "Testy",
       phone: "+14155550000",
+   });
+
+    await User.register({
+      username: "test1",
+      password: "password",
+      first_name: "Test1",
+      last_name: "Testy1",
+      phone: "+14155550000",
+    });
+
+    await User.register({
+      username: "test2",
+      password: "password",
+      first_name: "Test2",
+      last_name: "Testy2",
+      phone: "+14155552222",
     });
   });
 
@@ -31,9 +48,10 @@ describe("Test User class", function () {
 
   test("can authenticate", async function () {
     let isValid = await User.authenticate("test", "password");
+    console.log('Authentication Result:', isValid);
     expect(isValid).toBeTruthy();
 
-    isValid =  await User.authenticate("test", "xxx");
+    isValid = await User.authenticate("test", "xxx");
     expect(isValid).toBeFalsy();
   });
 
@@ -62,12 +80,26 @@ describe("Test User class", function () {
 
   test("can get all", async function () {
     let u = await User.all();
-    expect(u).toEqual([{
-      username: "test",
-      first_name: "Test",
-      last_name: "Testy",
-      phone: "+14155550000"
-    }]);
+    expect(u).toEqual([
+      {
+        username: "test",
+        first_name: "Test",
+        last_name: "Testy",
+        phone: "+14155550000"
+      },
+      {
+        username: "test1",
+        first_name: "Test1",
+        last_name: "Testy1",
+        phone: "+14155550000"
+      },
+      {
+        username: "test2",
+        first_name: "Test2",
+        last_name: "Testy2",
+        phone: "+14155552222"
+      },
+    ]);
   });
 });
 
@@ -78,13 +110,20 @@ describe("Test messages part of User class", function () {
     await db.query("ALTER SEQUENCE messages_id_seq RESTART WITH 1");
 
     let u1 = await User.register({
+      username: "test",
+      password: "password",
+      first_name: "Test",
+      last_name: "Testy",
+      phone: "+14155550000",
+    });
+    let u2 = await User.register({
       username: "test1",
       password: "password",
       first_name: "Test1",
       last_name: "Testy1",
       phone: "+14155550000",
     });
-    let u2 = await User.register({
+    let u3 = await User.register({
       username: "test2",
       password: "password",
       first_name: "Test2",
@@ -108,8 +147,8 @@ describe("Test messages part of User class", function () {
     expect(m).toEqual([{
       id: expect.any(Number),
       body: "u1-to-u2",
-      sent_at: expect.any(Date),
-      read_at: null,
+      readAt: null,
+      sentAt: expect.any(Date),
       to_user: {
         username: "test2",
         first_name: "Test2",
@@ -124,8 +163,8 @@ describe("Test messages part of User class", function () {
     expect(m).toEqual([{
       id: expect.any(Number),
       body: "u2-to-u1",
-      sent_at: expect.any(Date),
-      read_at: null,
+      readAt: null,
+      sentAt: expect.any(Date),
       from_user: {
         username: "test2",
         first_name: "Test2",
@@ -136,6 +175,7 @@ describe("Test messages part of User class", function () {
   });
 });
 
-afterAll(async function() {
+
+afterAll(async function () {
   await db.end();
 });
